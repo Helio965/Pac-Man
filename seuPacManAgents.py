@@ -38,11 +38,9 @@ class MinimaxAgent(MultiAgentSearchAgent):
         Adicione o código para minimax
         """
 
-        # A busca precisa de pelo menos um ciclo completo de jogadas para ter
-        # ações a comparar. Com self.depth <= 0 não existe árvore alguma: a
-        # raiz cairia direto na condição de parada e devolveria um número, o
-        # que estouraria adiante como "Illegal action <número>". Avisa aqui,
-        # onde a causa real fica visível.
+        # Com profundidade menor que 1 não há árvore para percorrer: a raiz
+        # devolveria um número em vez de uma ação, e o jogo só acusaria o erro
+        # depois, como "Illegal action".
         if self.depth < 1:
             raise ValueError(
                 'MinimaxAgent precisa de profundidade >= 1 (recebido: %d). '
