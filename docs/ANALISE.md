@@ -3,9 +3,9 @@
 Disciplina: Inteligência Artificial — Ciências da Computação
 Professor: Nikson Bernardes Fernandes Ferreira
 
-Este documento consolida a análise dos 4 PDFs e do código-fonte entregues.
+Este documento consolida a análise dos PDFs da disciplina e do código-fonte entregues.
 Os arquivos originais estão em `docs/originais/`, as transcrições em `docs/`,
-e o projeto em `pacman/`.
+e o projeto executável na raiz do repositório.
 
 ---
 
@@ -21,10 +21,20 @@ e o projeto em `pacman/`.
 | `docs/aula3-busca.txt` | texto extraído da Aula 3 | TXT |
 | `docs/aula5-busca-heuristica.md` | transcrição manual (slides em imagem) | Markdown |
 | `docs/agentes-inteligentes.md` | transcrição manual (slides em imagem) | Markdown |
-| `pacman/` | conteúdo de `pacman.zip` (21 arquivos + `layouts/` + `test_cases/`) | código |
+| `docs/originais/IA-Aula4-Busca-Cega.pdf` | Aula 4 — Tipos de Busca (Busca Cega) | PDF só imagem (35 slides) |
+| `docs/originais/IA-Aula9-Aprendizagem-de-Maquina.pdf` | Aula 9 — Aprendizagem de Máquina | PDF só imagem (64 slides) |
+| `docs/originais/IA-Aula11-Aprendizado-Profundo-CNN.pdf` | Aula 11 — Aprendizado Profundo / CNN | PDF com texto (53 slides) |
+| raiz do repositório | conteúdo de `pacman.zip` (`pacman.py`, `game.py`, `layouts/`, `test_cases/`, ...) | código |
 
-Os dois PDFs de slides não possuem camada de texto — foram lidos página a
-página e transcritos em Markdown.
+Os PDFs de slides marcados como "só imagem" não possuem camada de texto — os
+dois primeiros (Aula 5 e Agentes Inteligentes) foram lidos página a página e
+transcritos em Markdown.
+
+As Aulas 4, 9 e 11 chegaram depois e estão arquivadas como referência da
+disciplina. Elas não entram na implementação: a Aula 4 cobre busca cega
+(largura e profundidade, evitar estados repetidos — Russell & Norvig cap. 3),
+e as Aulas 9 e 11 cobrem aprendizado de máquina e redes convolucionais. O
+trabalho pedido é busca adversarial Minimax, um tema distinto.
 
 ---
 
@@ -91,22 +101,24 @@ escolhe a ação que a maximiza sob a suposição de fantasmas adversariais.
 
 ---
 
-## 3. Análise do código (`pacman/`)
+## 3. Análise do código do projeto
 
-### 3.1 Estado atual
+### 3.1 Estado inicial, antes da implementação
 
-`seuPacManAgents.py` contém o esqueleto com `pass` — ou seja, `minimax()`
-retorna `None`. Executar hoje quebra com:
+`seuPacManAgents.py` vinha com o esqueleto terminando em `pass` — ou seja,
+`minimax()` retornava `None` e o jogo quebrava com:
 
 ```
 Exception: Illegal action None
 ```
 
 (verificado com `python3 pacman.py -p MinimaxAgent -l minimaxClassic -q -f`).
-É o comportamento esperado de um esqueleto não implementado.
+Era o comportamento esperado de um esqueleto não implementado.
 
-O restante do projeto está funcional: `python3 pacman.py -p GreedyAgent -l
-smallClassic -q -f` roda até o fim normalmente.
+O restante do projeto já estava funcional: `python3 pacman.py -p GreedyAgent -l
+smallClassic -q -f` rodava até o fim normalmente.
+
+O Minimax foi implementado depois disso; veja a seção 6.
 
 ### 3.2 API do `GameState` relevante ao Minimax
 
@@ -129,14 +141,14 @@ de gerar sucessores.
 `pacman.py::loadAgent` varre os diretórios do `PYTHONPATH` (mais `.`) buscando
 arquivos terminados em `gents.py`. `seuPacManAgents.py` casa com esse padrão,
 então `-p MinimaxAgent` encontra a classe sem configuração extra — desde que o
-comando seja executado **de dentro da pasta `pacman/`**.
+comando seja executado **de dentro da pasta do projeto**.
 
 ---
 
 ## 4. Pontos de atenção encontrados
 
-Quatro discrepâncias relevantes entre o guia/código e o comportamento real,
-todas verificadas por execução:
+Cinco pontos relevantes entre o guia/código e o comportamento real, todos
+verificados por execução:
 
 ### 4.1 A flag `--depth` do guia não existe
 
@@ -188,17 +200,28 @@ Efeito colateral menor da mesma função: `min(ghostDistances)` levanta
 `test_cases/q2/` resolvem o agente com `getattr(multiAgents, 'MinimaxAgent')`.
 Como `MinimaxAgent` mora em `seuPacManAgents.py` (e `multiAgents.py` não tem a
 classe `StaffMultiAgentSearchAgent` usada pelo teste `8-pacman-game`), rodar
-`autograder.py -q q2` falha independentemente da implementação. Os casos de
-teste em `test_cases/q2/` continuam úteis como **referência conceitual** (as
-árvores de minimax com valores esperados), mas a verificação prática é jogar.
+`autograder.py -q q2` falha independentemente da implementação.
+
+Os casos de teste em si, porém, continuam válidos e foram aproveitados: as 33
+árvores `GraphGameTreeTest` de `test_cases/q2` foram rodadas contra o
+`MinimaxAgent` de `seuPacManAgents.py` por um script de verificação avulso
+(mantido fora do repositório, já que não faz parte da entrega), comparando a
+ação escolhida e o conjunto de nós gerados com os arquivos `.solution`
+oficiais. Resultado na seção 6.1.
 
 ### 4.4 Custo computacional dos padrões
 
-O padrão de `pacman.py` é `mediumClassic` com **4 fantasmas**, e o padrão de
-`MultiAgentSearchAgent` é `depth=3`. Isso significa uma árvore de
-5 camadas × 3 profundidades = 15 níveis de recursão por jogada — inviável na
-prática. Para depurar, use `minimaxClassic` (2 fantasmas) com `depth=2`,
-exatamente como o guia recomenda na seção 7.
+O padrão de `pacman.py` é o layout `mediumClassic` com `depth=3` (padrão de
+`MultiAgentSearchAgent`). A opção `-k` limita os fantasmas a no máximo 4, mas
+quem manda é o mapa: contando os `G` nos arquivos `.lay`, `mediumClassic` tem
+**2 fantasmas** e `minimaxClassic` tem **3**.
+
+Então o comando padrão são 3 agentes × 3 de profundidade = 9 níveis de
+recursão por jogada. É pesado, mas roda: uma partida completa levou **1m47s**
+aqui. Já `minimaxClassic` com `depth=3` são 4 agentes = 12 níveis.
+
+Para depurar rápido, use `depth=1` ou `depth=2`, como o guia recomenda na
+seção 7 — nesses casos a partida termina em menos de um segundo.
 
 ### 4.5 Ambiente sem `tkinter`
 
@@ -210,7 +233,7 @@ Python completo, o modo gráfico funciona normalmente.
 
 ## 5. Comandos úteis
 
-Todos executados de dentro de `pacman/`:
+Todos executados a partir da raiz do repositório:
 
 ```bash
 # jogo padrão (teclado, precisa de tkinter)
@@ -236,6 +259,44 @@ python3 pacman.py -p MinimaxAgent -a depth=2 -l minimaxClassic -q -f
 
 ## 6. Estado do trabalho
 
-Materiais analisados e salvos. **Nenhuma implementação foi feita** — o
-`MinimaxAgent` continua com o esqueleto original do professor, aguardando as
-próximas instruções.
+O Minimax foi implementado em `seuPacManAgents.py`, dentro de
+`MinimaxAgent.getAction`. Nada fora dessa classe foi alterado: engine,
+layouts, `test_cases/`, `betterEvaluationFunction` e os cabeçalhos de licença
+da UC Berkeley seguem como vieram no `pacman.zip`.
+
+Resumo da implementação:
+
+- parada em `isWin()`, `isLose()` ou `depth == self.depth`, avaliando a folha
+  com `self.evaluationFunction(state)`;
+- agente sem ações legais também é avaliado, para o ramo não ficar valendo
+  `-inf`/`+inf`;
+- próximo agente = `0` quando o atual é o último fantasma, senão
+  `agentIndex + 1`; a profundidade só cresce nessa volta ao Pac-Man;
+- número de fantasmas lido de `state.getNumAgents()`, sem valor fixo;
+- MAX no Pac-Man, MIN nos fantasmas;
+- apenas a chamada da raiz devolve a ação, as demais devolvem o valor;
+- `self.depth < 1` levanta `ValueError` com mensagem clara, em vez de deixar o
+  erro aparecer adiante como `Illegal action 0.0`.
+
+### 6.1 Validação executada
+
+| Teste | Resultado |
+|---|---|
+| `py_compile` em `seuPacManAgents.py`, `pacman.py`, `game.py`, `multiAgents.py`, `ghostAgents.py` | sem erros |
+| 33 casos `GraphGameTreeTest` de `test_cases/q2` conferidos contra os `.solution` (ação e nós gerados) | 33/33 corretos |
+| `--pacman MinimaxAgent -a depth=1 -l minimaxClassic -q -f` | vitória, score 516 |
+| `--pacman MinimaxAgent -a depth=2 -l minimaxClassic -q -f` | vitória, score 516 |
+| `--pacman MinimaxAgent -q -f` (padrão, `mediumClassic`, depth 3) | vitória, score −829, 1m47s |
+| `--pacman MinimaxAgent -a depth=2 -l smallClassic -k 1 -q -f` | vitória, score 930 |
+| `--pacman MinimaxAgent -a depth=2 -l minimaxClassic -q -f -n 5` | 2 vitórias em 5 |
+
+A verificação mais forte é a das árvores de `q2`: além da ação escolhida, ela
+compara o **conjunto de nós gerados** com o gabarito oficial, o que confirma a
+ordem de visita e o momento exato em que a profundidade é incrementada. Os
+casos `7-1*` e `7-2*` existem justamente para checar isso com um e com dois
+fantasmas.
+
+Sobre o desempenho em partida: `minimaxClassic` é um mapa apertado com 3
+fantasmas, e perder lá é comum — o Minimax assume fantasmas ótimos e, quando
+a morte parece inevitável, não há jogada que a evite. Isso não indica erro no
+algoritmo; a corretude é o que as árvores de `q2` atestam.
