@@ -1,6 +1,6 @@
 # Análise dos Materiais — Projeto Minimax para Pac-Man
 
-Disciplina: Inteligência Artificial — Ciências da Computação
+Disciplina: Inteligência Artificial — Análise e Desenvolvimento de Sistemas
 Professor: Nikson Bernardes Fernandes Ferreira
 
 Este documento consolida a análise dos PDFs da disciplina e do código-fonte entregues.
