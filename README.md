@@ -2,7 +2,7 @@
 
 ## Disciplina
 
-Inteligência Artificial — Ciências da Computação
+Inteligência Artificial — Análise e Desenvolvimento de Sistemas
 
 ## Trabalho
 
